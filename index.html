@@ -1,0 +1,707 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fire Fighting Car + Ultrasonic — Circuit</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap');
+  :root {
+    --bg:#0a0e1a;--panel:#0f1628;--border:#1e3a5f;
+    --red:#ff4500;--blue:#00bfff;--green:#00ff88;
+    --yellow:#ffd700;--purple:#a855f7;--cyan:#00e5ff;
+    --text:#c8d8e8;--dim:#4a6080;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{background:var(--bg);color:var(--text);font-family:'Share Tech Mono',monospace;min-height:100vh;overflow-x:hidden}
+  body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,191,255,.04) 1px,transparent 1px),linear-gradient(90deg,rgba(0,191,255,.04) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+  .wrapper{position:relative;z-index:1;padding:20px;max-width:1200px;margin:0 auto}
+  header{text-align:center;padding:28px 0 18px;border-bottom:1px solid var(--border);margin-bottom:24px}
+  header h1{font-family:'Orbitron',monospace;font-size:clamp(1.3rem,4vw,2.2rem);font-weight:900;color:var(--red);text-shadow:0 0 20px rgba(255,69,0,.6),0 0 40px rgba(255,69,0,.3);letter-spacing:.1em}
+  header p{color:var(--blue);font-size:.8rem;margin-top:6px;letter-spacing:.2em}
+  .new-badge{display:inline-block;background:rgba(0,229,255,.15);border:1px solid var(--cyan);color:var(--cyan);font-size:.7rem;padding:2px 10px;border-radius:12px;margin-left:10px;letter-spacing:.1em;vertical-align:middle;animation:pulse 2s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .tabs{display:flex;gap:4px;margin-bottom:20px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+  .tab-btn{background:transparent;border:1px solid var(--border);border-bottom:none;color:var(--dim);font-family:'Share Tech Mono',monospace;font-size:.78rem;padding:8px 16px;cursor:pointer;transition:all .2s;border-radius:4px 4px 0 0;letter-spacing:.08em}
+  .tab-btn:hover{color:var(--blue);border-color:var(--blue)}
+  .tab-btn.active{color:var(--red);border-color:var(--red);background:rgba(255,69,0,.08)}
+  .tab-content{display:none}
+  .tab-content.active{display:block}
+  .circuit-panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto}
+  .circuit-panel svg{display:block;margin:0 auto;max-width:100%}
+  .conn-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:14px}
+  .conn-card{background:var(--panel);border:1px solid var(--border);border-radius:8px;overflow:hidden;transition:border-color .2s}
+  .conn-card:hover{border-color:var(--blue)}
+  .conn-card.new-card{border-color:rgba(0,229,255,.4);box-shadow:0 0 12px rgba(0,229,255,.1)}
+  .conn-card-header{padding:9px 14px;font-family:'Orbitron',monospace;font-size:.72rem;font-weight:700;letter-spacing:.12em;display:flex;align-items:center;gap:8px}
+  .dot{width:8px;height:8px;border-radius:50%}
+  .conn-table{width:100%;border-collapse:collapse;font-size:.76rem}
+  .conn-table th{padding:5px 12px;text-align:left;color:var(--dim);font-size:.68rem;letter-spacing:.1em;border-bottom:1px solid var(--border)}
+  .conn-table td{padding:6px 12px;border-bottom:1px solid rgba(30,58,95,.4);color:var(--text)}
+  .conn-table tr:last-child td{border-bottom:none}
+  .pin-tag{display:inline-block;padding:1px 7px;border-radius:3px;font-size:.7rem;font-weight:bold;font-family:'Share Tech Mono',monospace}
+  .pin-esp32{background:rgba(0,191,255,.15);color:var(--blue);border:1px solid rgba(0,191,255,.3)}
+  .pin-power{background:rgba(255,215,0,.12);color:var(--yellow);border:1px solid rgba(255,215,0,.3)}
+  .pin-signal{background:rgba(0,255,136,.1);color:var(--green);border:1px solid rgba(0,255,136,.3)}
+  .pin-gnd{background:rgba(168,85,247,.12);color:var(--purple);border:1px solid rgba(168,85,247,.3)}
+  .pin-motor{background:rgba(255,69,0,.12);color:var(--red);border:1px solid rgba(255,69,0,.3)}
+  .pin-ultra{background:rgba(0,229,255,.12);color:var(--cyan);border:1px solid rgba(0,229,255,.3)}
+  .info-box{background:rgba(0,229,255,.05);border:1px solid rgba(0,229,255,.25);border-radius:8px;padding:16px 20px;margin-bottom:18px;font-size:.8rem;line-height:1.7}
+  .info-box h3{color:var(--cyan);font-family:'Orbitron',monospace;font-size:.8rem;margin-bottom:10px;letter-spacing:.1em}
+  .feature-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+  .feature-box{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:14px;font-size:.78rem;line-height:1.6}
+  .feature-box h4{font-family:'Orbitron',monospace;font-size:.7rem;margin-bottom:8px;letter-spacing:.1em}
+  .code-panel{background:#050810;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .code-header{background:var(--panel);padding:10px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+  .code-dots{display:flex;gap:6px}
+  .code-dots span{width:10px;height:10px;border-radius:50%}
+  .code-body{padding:20px;overflow-x:auto;font-size:.77rem;line-height:1.75;max-height:580px;overflow-y:auto}
+  .code-body::-webkit-scrollbar{width:5px;height:5px}
+  .code-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+  .kw{color:#c792ea}.fn{color:#82aaff}.cm{color:#546e7a;font-style:italic}.st{color:#c3e88d}.nm{color:#f78c6c}.op{color:#89ddff}
+  .highlight-new{background:rgba(0,229,255,.07);border-left:2px solid var(--cyan);padding-left:8px;margin-left:-8px}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <h1>🔥 FIRE FIGHTING CAR <span class="new-badge">+ HC-SR04</span></h1>
+    <p>ESP32 · 3× IR · ULTRASONIC · 4× MOTORS · SERVO · PUMP · 12V</p>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('circuit',this)">⚡ CIRCUIT</button>
+    <button class="tab-btn" onclick="showTab('connections',this)">🔌 CONNECTIONS</button>
+    <button class="tab-btn" onclick="showTab('howit',this)">🧠 HOW IT WORKS</button>
+    <button class="tab-btn" onclick="showTab('flowchart',this)">🔄 FLOW</button>
+    <button class="tab-btn" onclick="showTab('code',this)">💻 CODE</button>
+  </div>
+
+  <!-- ═══════════ CIRCUIT TAB ═══════════ -->
+  <div id="tab-circuit" class="tab-content active">
+    <div class="circuit-panel">
+      <svg width="1060" height="720" viewBox="0 0 1060 720" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <filter id="gr"><feGaussianBlur stdDeviation="3" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="gb"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <filter id="gc"><feGaussianBlur stdDeviation="2.5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L0,6 L8,3 z" fill="#00bfff" opacity=".7"/></marker>
+        </defs>
+        <rect width="1060" height="720" fill="#0a0e1a"/>
+
+        <!-- BATTERY -->
+        <g transform="translate(20,24)">
+          <rect width="112" height="58" rx="6" fill="#1a1f35" stroke="#ffd700" stroke-width="1.5"/>
+          <text x="56" y="17" text-anchor="middle" fill="#ffd700" font-size="9" font-family="Share Tech Mono">12V BATTERY</text>
+          <rect x="10" y="22" width="92" height="22" rx="3" fill="#0a0e1a" stroke="#ffd700"/>
+          <text x="56" y="37" text-anchor="middle" fill="#ffd700" font-size="10" font-family="Share Tech Mono" font-weight="bold">⚡ 12V DC</text>
+          <rect x="36" y="50" width="14" height="8" fill="#ffd700" rx="2"/>
+          <text x="43" y="57" text-anchor="middle" fill="#0a0e1a" font-size="6" font-weight="bold">+</text>
+          <rect x="55" y="50" width="14" height="8" fill="#546e7a" rx="2"/>
+          <text x="62" y="57" text-anchor="middle" fill="#fff" font-size="6" font-weight="bold">–</text>
+        </g>
+
+        <!-- LM7805 -->
+        <g transform="translate(20,130)">
+          <rect width="112" height="50" rx="6" fill="#1a1f35" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="56" y="16" text-anchor="middle" fill="#a855f7" font-size="9" font-family="Share Tech Mono">LM7805</text>
+          <text x="56" y="29" text-anchor="middle" fill="#a855f7" font-size="8" font-family="Share Tech Mono">VOLTAGE REG</text>
+          <text x="56" y="42" text-anchor="middle" fill="#c8d8e8" font-size="8" font-family="Share Tech Mono">12V → 5V</text>
+        </g>
+
+        <!-- ══ ESP32 ══ -->
+        <g transform="translate(340,100)">
+          <rect width="200" height="380" rx="8" fill="#0f1628" stroke="#00bfff" stroke-width="2" filter="url(#gb)"/>
+          <text x="100" y="22" text-anchor="middle" fill="#00bfff" font-size="13" font-family="Orbitron,monospace" font-weight="700">ESP32</text>
+          <text x="100" y="35" text-anchor="middle" fill="#546e7a" font-size="8" font-family="Share Tech Mono">38-PIN DEVKIT</text>
+          <rect x="45" y="43" width="110" height="55" rx="4" fill="#1a2340" stroke="#1e3a5f"/>
+          <text x="100" y="64" text-anchor="middle" fill="#00bfff" font-size="8" font-family="Share Tech Mono">Xtensa LX6</text>
+          <text x="100" y="76" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">240MHz / WiFi+BT</text>
+          <text x="100" y="88" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">MicroPython</text>
+
+          <!-- Left pins -->
+          <text x="8" y="123" text-anchor="middle" fill="#00ff88" font-size="7" font-family="Share Tech Mono">G34</text><circle cx="32" cy="120" r="3" fill="#00ff88"/>
+          <text x="8" y="140" text-anchor="middle" fill="#00ff88" font-size="7" font-family="Share Tech Mono">G35</text><circle cx="32" cy="137" r="3" fill="#00ff88"/>
+          <text x="8" y="157" text-anchor="middle" fill="#00ff88" font-size="7" font-family="Share Tech Mono">G32</text><circle cx="32" cy="154" r="3" fill="#00ff88"/>
+          <!-- NEW: ultrasonic -->
+          <text x="8" y="178" text-anchor="middle" fill="#00e5ff" font-size="7" font-family="Share Tech Mono">G18</text><circle cx="32" cy="175" r="3.5" fill="#00e5ff" filter="url(#gc)"/>
+          <text x="8" y="195" text-anchor="middle" fill="#00e5ff" font-size="7" font-family="Share Tech Mono">G19</text><circle cx="32" cy="192" r="3.5" fill="#00e5ff" filter="url(#gc)"/>
+
+          <text x="8" y="220" text-anchor="middle" fill="#ff6347" font-size="7" font-family="Share Tech Mono">G26</text><circle cx="32" cy="217" r="3" fill="#ff6347"/>
+          <text x="8" y="237" text-anchor="middle" fill="#ff6347" font-size="7" font-family="Share Tech Mono">G27</text><circle cx="32" cy="234" r="3" fill="#ff6347"/>
+          <text x="8" y="254" text-anchor="middle" fill="#ff6347" font-size="7" font-family="Share Tech Mono">G14</text><circle cx="32" cy="251" r="3" fill="#ff6347"/>
+
+          <!-- Right pins -->
+          <text x="192" y="123" text-anchor="middle" fill="#ff6347" font-size="7" font-family="Share Tech Mono">G25</text><circle cx="168" cy="120" r="3" fill="#ff6347"/>
+          <text x="192" y="140" text-anchor="middle" fill="#ff6347" font-size="7" font-family="Share Tech Mono">G33</text><circle cx="168" cy="137" r="3" fill="#ff6347"/>
+          <text x="192" y="157" text-anchor="middle" fill="#ff6347" font-size="7" font-family="Share Tech Mono">G12</text><circle cx="168" cy="154" r="3" fill="#ff6347"/>
+          <text x="192" y="178" text-anchor="middle" fill="#ffd700" font-size="7" font-family="Share Tech Mono">G13</text><circle cx="168" cy="175" r="3" fill="#ffd700"/>
+          <text x="192" y="195" text-anchor="middle" fill="#a855f7" font-size="7" font-family="Share Tech Mono">G15</text><circle cx="168" cy="192" r="3" fill="#a855f7"/>
+          <text x="192" y="310" text-anchor="middle" fill="#ffd700" font-size="7" font-family="Share Tech Mono">VIN</text><circle cx="168" cy="307" r="3" fill="#ffd700"/>
+          <text x="192" y="330" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">GND</text><circle cx="168" cy="327" r="3" fill="#546e7a"/>
+
+          <!-- Labels -->
+          <text x="100" y="122" text-anchor="middle" fill="#546e7a" font-size="6" font-family="Share Tech Mono">← IR sensors</text>
+          <text x="100" y="177" text-anchor="middle" fill="#00e5ff" font-size="6" font-family="Share Tech Mono">← TRIG/ECHO</text>
+          <text x="100" y="219" text-anchor="middle" fill="#546e7a" font-size="6" font-family="Share Tech Mono">← L298N</text>
+          <text x="100" y="177" text-anchor="middle" fill="#546e7a" font-size="6" font-family="Share Tech Mono"></text>
+        </g>
+
+        <!-- ══ HC-SR04 ULTRASONIC (NEW) ══ -->
+        <g transform="translate(20,240)">
+          <rect width="150" height="70" rx="7" fill="#0a1520" stroke="#00e5ff" stroke-width="2" filter="url(#gc)"/>
+          <text x="75" y="18" text-anchor="middle" fill="#00e5ff" font-size="10" font-family="Orbitron,monospace" font-weight="700">HC-SR04</text>
+          <text x="75" y="30" text-anchor="middle" fill="#546e7a" font-size="8" font-family="Share Tech Mono">ULTRASONIC</text>
+          <!-- Transducer circles -->
+          <circle cx="38" cy="50" r="12" fill="#1a2340" stroke="#00e5ff" stroke-width="1.5"/>
+          <text x="38" y="54" text-anchor="middle" fill="#00e5ff" font-size="7" font-family="Share Tech Mono">TX</text>
+          <circle cx="112" cy="50" r="12" fill="#1a2340" stroke="#00e5ff" stroke-width="1.5"/>
+          <text x="112" y="54" text-anchor="middle" fill="#00e5ff" font-size="7" font-family="Share Tech Mono">RX</text>
+          <!-- Pins labels -->
+          <text x="75" y="65" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">TRIG=G18 ECHO=G19</text>
+        </g>
+
+        <!-- ══ IR Sensors ══ -->
+        <g transform="translate(20,360)">
+          <rect width="105" height="48" rx="5" fill="#0f1628" stroke="#00ff88" stroke-width="1.5"/>
+          <text x="52" y="16" text-anchor="middle" fill="#00ff88" font-size="8" font-family="Share Tech Mono">IR SENSOR</text>
+          <text x="52" y="30" text-anchor="middle" fill="#00ff88" font-size="10" font-family="Orbitron,monospace" font-weight="700">LEFT</text>
+          <text x="52" y="42" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">GPIO 34</text>
+        </g>
+        <g transform="translate(20,425)">
+          <rect width="105" height="48" rx="5" fill="#0f1628" stroke="#00ff88" stroke-width="1.5" filter="url(#gc)"/>
+          <text x="52" y="16" text-anchor="middle" fill="#00ff88" font-size="8" font-family="Share Tech Mono">IR SENSOR</text>
+          <text x="52" y="30" text-anchor="middle" fill="#00ff88" font-size="10" font-family="Orbitron,monospace" font-weight="700">CENTER</text>
+          <text x="52" y="42" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">GPIO 35</text>
+        </g>
+        <g transform="translate(20,490)">
+          <rect width="105" height="48" rx="5" fill="#0f1628" stroke="#00ff88" stroke-width="1.5"/>
+          <text x="52" y="16" text-anchor="middle" fill="#00ff88" font-size="8" font-family="Share Tech Mono">IR SENSOR</text>
+          <text x="52" y="30" text-anchor="middle" fill="#00ff88" font-size="10" font-family="Orbitron,monospace" font-weight="700">RIGHT</text>
+          <text x="52" y="42" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">GPIO 32</text>
+        </g>
+
+        <!-- ══ L298N ══ -->
+        <g transform="translate(720,100)">
+          <rect width="155" height="210" rx="8" fill="#0f1628" stroke="#ff4500" stroke-width="2" filter="url(#gr)"/>
+          <text x="77" y="20" text-anchor="middle" fill="#ff4500" font-size="11" font-family="Orbitron,monospace" font-weight="700">L298N</text>
+          <text x="77" y="33" text-anchor="middle" fill="#546e7a" font-size="8" font-family="Share Tech Mono">MOTOR DRIVER</text>
+          <rect x="28" y="40" width="99" height="45" rx="3" fill="#1a2340" stroke="#1e3a5f"/>
+          <text x="77" y="62" text-anchor="middle" fill="#ff4500" font-size="9" font-family="Share Tech Mono">H-BRIDGE</text>
+          <text x="77" y="75" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">2A per channel</text>
+          <!-- Input pins -->
+          <text x="18" y="107" text-anchor="end" fill="#c8d8e8" font-size="7" font-family="Share Tech Mono">IN1</text><circle cx="20" cy="104" r="3" fill="#ff6347"/>
+          <text x="18" y="122" text-anchor="end" fill="#c8d8e8" font-size="7" font-family="Share Tech Mono">IN2</text><circle cx="20" cy="119" r="3" fill="#ff6347"/>
+          <text x="18" y="137" text-anchor="end" fill="#c8d8e8" font-size="7" font-family="Share Tech Mono">ENA</text><circle cx="20" cy="134" r="3" fill="#ff6347"/>
+          <text x="18" y="154" text-anchor="end" fill="#c8d8e8" font-size="7" font-family="Share Tech Mono">IN3</text><circle cx="20" cy="151" r="3" fill="#ff6347"/>
+          <text x="18" y="169" text-anchor="end" fill="#c8d8e8" font-size="7" font-family="Share Tech Mono">IN4</text><circle cx="20" cy="166" r="3" fill="#ff6347"/>
+          <text x="18" y="184" text-anchor="end" fill="#c8d8e8" font-size="7" font-family="Share Tech Mono">ENB</text><circle cx="20" cy="181" r="3" fill="#ff6347"/>
+          <!-- Output pins -->
+          <text x="137" y="107" text-anchor="start" fill="#c8d8e8" font-size="7" font-family="Share Tech Mono">A+</text><circle cx="135" cy="104" r="3" fill="#00ff88"/>
+          <text x="137" y="122" text-anchor="start" fill="#c8d8e8" font-size="7" font-family="Share Tech Mono">A–</text><circle cx="135" cy="119" r="3" fill="#00ff88"/>
+          <text x="137" y="154" text-anchor="start" fill="#c8d8e8" font-size="7" font-family="Share Tech Mono">B+</text><circle cx="135" cy="151" r="3" fill="#00ff88"/>
+          <text x="137" y="169" text-anchor="start" fill="#c8d8e8" font-size="7" font-family="Share Tech Mono">B–</text><circle cx="135" cy="166" r="3" fill="#00ff88"/>
+        </g>
+
+        <!-- Motors -->
+        <g transform="translate(900,130)">
+          <rect width="120" height="44" rx="5" fill="#0f1628" stroke="#ff4500" stroke-width="1.5"/>
+          <text x="60" y="16" text-anchor="middle" fill="#ff4500" font-size="8" font-family="Share Tech Mono">MOTORS A ×2</text>
+          <text x="60" y="29" text-anchor="middle" fill="#c8d8e8" font-size="8" font-family="Share Tech Mono">LEFT SIDE</text>
+          <text x="60" y="40" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">parallel wired</text>
+        </g>
+        <g transform="translate(900,190)">
+          <rect width="120" height="44" rx="5" fill="#0f1628" stroke="#ff4500" stroke-width="1.5"/>
+          <text x="60" y="16" text-anchor="middle" fill="#ff4500" font-size="8" font-family="Share Tech Mono">MOTORS B ×2</text>
+          <text x="60" y="29" text-anchor="middle" fill="#c8d8e8" font-size="8" font-family="Share Tech Mono">RIGHT SIDE</text>
+          <text x="60" y="40" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">parallel wired</text>
+        </g>
+
+        <!-- Servo -->
+        <g transform="translate(720,360)">
+          <rect width="140" height="50" rx="5" fill="#0f1628" stroke="#a855f7" stroke-width="1.5"/>
+          <text x="70" y="16" text-anchor="middle" fill="#a855f7" font-size="9" font-family="Share Tech Mono">MINI SERVO</text>
+          <text x="70" y="29" text-anchor="middle" fill="#c8d8e8" font-size="8" font-family="Share Tech Mono">SG90 / MG90S</text>
+          <text x="70" y="42" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">GPIO 15 (PWM 50Hz)</text>
+        </g>
+
+        <!-- Relay -->
+        <g transform="translate(560,460)">
+          <rect width="105" height="50" rx="5" fill="#0f1628" stroke="#ffd700" stroke-width="1.5"/>
+          <text x="52" y="16" text-anchor="middle" fill="#ffd700" font-size="8" font-family="Share Tech Mono">5V RELAY</text>
+          <text x="52" y="29" text-anchor="middle" fill="#c8d8e8" font-size="8" font-family="Share Tech Mono">MODULE</text>
+          <text x="52" y="42" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">GPIO 13 control</text>
+        </g>
+
+        <!-- Pump -->
+        <g transform="translate(720,460)">
+          <rect width="140" height="50" rx="5" fill="#0f1628" stroke="#00bfff" stroke-width="1.5"/>
+          <text x="70" y="16" text-anchor="middle" fill="#00bfff" font-size="9" font-family="Share Tech Mono">WATER PUMP</text>
+          <text x="70" y="29" text-anchor="middle" fill="#c8d8e8" font-size="8" font-family="Share Tech Mono">5V Mini Pump</text>
+          <text x="70" y="42" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">via Relay</text>
+        </g>
+
+        <!-- ══ WIRES ══ -->
+        <!-- Battery → LM7805 -->
+        <line x1="76" y1="82" x2="76" y2="130" stroke="#ffd700" stroke-width="2"/>
+        <!-- Battery 12V rail → L298N -->
+        <polyline points="132,53 720,53 720,120" fill="none" stroke="#ffd700" stroke-width="2"/>
+        <text x="430" y="48" fill="#ffd700" font-size="8" font-family="Share Tech Mono" text-anchor="middle">12V RAIL</text>
+
+        <!-- LM7805 5V → ESP32 VIN -->
+        <polyline points="132,155 300,155 300,620 510,620 510,427" fill="none" stroke="#a855f7" stroke-width="1.5" stroke-dasharray="6,3"/>
+        <text x="200" y="148" fill="#a855f7" font-size="7" font-family="Share Tech Mono">5V</text>
+
+        <!-- HC-SR04 wires (NEW — cyan) -->
+        <!-- VCC -->
+        <polyline points="170,255 220,255 220,240 300,240 300,210" fill="none" stroke="#ffd700" stroke-width="1.5"/>
+        <!-- GND -->
+        <polyline points="170,295 215,295 215,690 850,690" fill="none" stroke="#546e7a" stroke-width="1" stroke-dasharray="4,3"/>
+        <!-- TRIG → GPIO18 -->
+        <polyline points="170,270 330,270 330,275 372,275" fill="none" stroke="#00e5ff" stroke-width="2"/>
+        <text x="260" y="265" fill="#00e5ff" font-size="7" font-family="Share Tech Mono">TRIG</text>
+        <!-- ECHO → GPIO19 -->
+        <polyline points="170,280 325,280 325,292 372,292" fill="none" stroke="#00e5ff" stroke-width="2" stroke-dasharray="7,3"/>
+        <text x="260" y="292" fill="#00e5ff" font-size="7" font-family="Share Tech Mono">ECHO</text>
+
+        <!-- IR sensors → ESP32 -->
+        <polyline points="125,380 310,380 310,220 372,220" fill="none" stroke="#00ff88" stroke-width="1.5"/>
+        <polyline points="125,447 305,447 305,237 372,237" fill="none" stroke="#00ff88" stroke-width="1.5"/>
+        <polyline points="125,510 300,510 300,254 372,254" fill="none" stroke="#00ff88" stroke-width="1.5"/>
+
+        <!-- ESP32 → L298N IN1-4, ENA/ENB -->
+        <polyline points="540,317 650,317 650,204 720,204" fill="none" stroke="#ff6347" stroke-width="1.5"/>
+        <polyline points="540,334 655,334 655,219 720,219" fill="none" stroke="#ff6347" stroke-width="1.5"/>
+        <polyline points="540,351 660,351 660,234 720,234" fill="none" stroke="#ff6347" stroke-width="1.5"/>
+        <polyline points="540,220 610,220 610,251 720,251" fill="none" stroke="#ff6347" stroke-width="1.5"/>
+        <polyline points="540,237 615,237 615,266 720,266" fill="none" stroke="#ff6347" stroke-width="1.5"/>
+        <polyline points="540,254 620,254 620,281 720,281" fill="none" stroke="#ff6347" stroke-width="1.5"/>
+
+        <!-- L298N → Motors -->
+        <line x1="875" y1="204" x2="900" y2="152" stroke="#00ff88" stroke-width="2"/>
+        <line x1="875" y1="251" x2="900" y2="212" stroke="#00ff88" stroke-width="2"/>
+
+        <!-- ESP32 → Relay (GPIO13) -->
+        <polyline points="540,275 680,275 680,620 580,620 580,510" fill="none" stroke="#ffd700" stroke-width="1.5"/>
+        <!-- Relay → Pump -->
+        <line x1="665" y1="485" x2="720" y2="485" stroke="#00bfff" stroke-width="1.5"/>
+
+        <!-- ESP32 → Servo (GPIO15) -->
+        <polyline points="540,292 700,292 700,360 720,385" fill="none" stroke="#a855f7" stroke-width="1.5"/>
+
+        <!-- GND rail -->
+        <polyline points="132,175 180,175 180,690 850,690" fill="none" stroke="#546e7a" stroke-width="1.5" stroke-dasharray="4,2"/>
+        <text x="530" y="685" text-anchor="middle" fill="#546e7a" font-size="8" font-family="Share Tech Mono">COMMON GND RAIL</text>
+
+        <!-- Callout: NEW HC-SR04 -->
+        <rect x="8" y="225" width="8" height="95" rx="3" fill="#00e5ff" opacity=".6"/>
+        <text x="22" y="233" fill="#00e5ff" font-size="7" font-family="Share Tech Mono">NEW</text>
+
+        <!-- Legend -->
+        <g transform="translate(20,658)">
+          <text x="0" y="12" fill="#546e7a" font-size="8" font-family="Share Tech Mono">WIRES:</text>
+          <line x1="55" y1="8" x2="78" y2="8" stroke="#ffd700" stroke-width="2"/><text x="82" y="12" fill="#ffd700" font-size="7" font-family="Share Tech Mono">12V</text>
+          <line x1="118" y1="8" x2="141" y2="8" stroke="#00e5ff" stroke-width="2"/><text x="145" y="12" fill="#00e5ff" font-size="7" font-family="Share Tech Mono">Ultrasonic</text>
+          <line x1="210" y1="8" x2="233" y2="8" stroke="#00ff88" stroke-width="2"/><text x="237" y="12" fill="#00ff88" font-size="7" font-family="Share Tech Mono">IR Signal</text>
+          <line x1="295" y1="8" x2="318" y2="8" stroke="#ff6347" stroke-width="2"/><text x="322" y="12" fill="#ff6347" font-size="7" font-family="Share Tech Mono">Motor Ctrl</text>
+          <line x1="390" y1="8" x2="413" y2="8" stroke="#a855f7" stroke-width="2"/><text x="417" y="12" fill="#a855f7" font-size="7" font-family="Share Tech Mono">Servo</text>
+          <line x1="460" y1="8" x2="483" y2="8" stroke="#546e7a" stroke-width="1.5" stroke-dasharray="4,2"/><text x="487" y="12" fill="#546e7a" font-size="7" font-family="Share Tech Mono">GND</text>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ═══════════ CONNECTIONS TAB ═══════════ -->
+  <div id="tab-connections" class="tab-content">
+    <div class="conn-grid">
+
+      <!-- HC-SR04 NEW -->
+      <div class="conn-card new-card">
+        <div class="conn-card-header" style="background:rgba(0,229,255,.1);border-bottom:1px solid var(--border)">
+          <div class="dot" style="background:#00e5ff"></div>
+          <span style="color:#00e5ff">HC-SR04 ULTRASONIC</span>
+          <span style="font-size:.65rem;color:#00e5ff;background:rgba(0,229,255,.15);padding:1px 7px;border-radius:8px;border:1px solid rgba(0,229,255,.3)">NEW</span>
+        </div>
+        <table class="conn-table">
+          <tr><th>HC-SR04 Pin</th><th>→</th><th>Connect To</th></tr>
+          <tr><td>VCC</td><td>→</td><td><span class="pin-tag pin-power">5V</span></td></tr>
+          <tr><td>GND</td><td>→</td><td><span class="pin-tag pin-gnd">Common GND</span></td></tr>
+          <tr><td>TRIG</td><td>→</td><td><span class="pin-tag pin-ultra">GPIO 18</span> ESP32</td></tr>
+          <tr><td>ECHO</td><td>→</td><td><span class="pin-tag pin-ultra">GPIO 19</span> ESP32 <span style="color:#546e7a;font-size:.68rem">(3.3V safe)</span></td></tr>
+        </table>
+        <div style="padding:8px 12px;font-size:.72rem;color:#546e7a;border-top:1px solid var(--border)">
+          ⚠️ HC-SR04 ECHO outputs 5V. Use a voltage divider (1kΩ + 2kΩ) or HC-SR04P (3.3V version) to protect ESP32.
+        </div>
+      </div>
+
+      <!-- IR Sensors -->
+      <div class="conn-card">
+        <div class="conn-card-header" style="background:rgba(0,255,136,.07);border-bottom:1px solid var(--border)">
+          <div class="dot" style="background:#00ff88"></div>
+          <span style="color:#00ff88">IR FLAME SENSORS ×3</span>
+        </div>
+        <table class="conn-table">
+          <tr><th>Pin</th><th>→</th><th>ESP32</th></tr>
+          <tr><td>OUT — Left</td><td>→</td><td><span class="pin-tag pin-esp32">GPIO 34</span></td></tr>
+          <tr><td>OUT — Center</td><td>→</td><td><span class="pin-tag pin-esp32">GPIO 35</span></td></tr>
+          <tr><td>OUT — Right</td><td>→</td><td><span class="pin-tag pin-esp32">GPIO 32</span></td></tr>
+          <tr><td>VCC (all 3)</td><td>→</td><td><span class="pin-tag pin-power">5V</span></td></tr>
+          <tr><td>GND (all 3)</td><td>→</td><td><span class="pin-tag pin-gnd">GND</span></td></tr>
+        </table>
+      </div>
+
+      <!-- L298N ↔ ESP32 -->
+      <div class="conn-card">
+        <div class="conn-card-header" style="background:rgba(255,69,0,.07);border-bottom:1px solid var(--border)">
+          <div class="dot" style="background:#ff4500"></div>
+          <span style="color:#ff4500">L298N ↔ ESP32</span>
+        </div>
+        <table class="conn-table">
+          <tr><th>L298N</th><th>→</th><th>ESP32</th></tr>
+          <tr><td>IN1</td><td>→</td><td><span class="pin-tag pin-esp32">GPIO 26</span></td></tr>
+          <tr><td>IN2</td><td>→</td><td><span class="pin-tag pin-esp32">GPIO 27</span></td></tr>
+          <tr><td>ENA (PWM)</td><td>→</td><td><span class="pin-tag pin-esp32">GPIO 14</span></td></tr>
+          <tr><td>IN3</td><td>→</td><td><span class="pin-tag pin-esp32">GPIO 25</span></td></tr>
+          <tr><td>IN4</td><td>→</td><td><span class="pin-tag pin-esp32">GPIO 33</span></td></tr>
+          <tr><td>ENB (PWM)</td><td>→</td><td><span class="pin-tag pin-esp32">GPIO 12</span></td></tr>
+          <tr><td>12V</td><td>→</td><td><span class="pin-tag pin-power">Battery 12V+</span></td></tr>
+          <tr><td>GND</td><td>→</td><td><span class="pin-tag pin-gnd">Common GND</span></td></tr>
+        </table>
+      </div>
+
+      <!-- L298N → Motors -->
+      <div class="conn-card">
+        <div class="conn-card-header" style="background:rgba(255,69,0,.07);border-bottom:1px solid var(--border)">
+          <div class="dot" style="background:#ff4500"></div>
+          <span style="color:#ff4500">L298N → MOTORS</span>
+        </div>
+        <table class="conn-table">
+          <tr><th>Output</th><th>→</th><th>Motor</th></tr>
+          <tr><td>OUT1 / OUT2</td><td>→</td><td><span class="pin-tag pin-motor">Left Motor 1</span></td></tr>
+          <tr><td colspan="3" style="color:#546e7a;font-size:.7rem;padding:3px 12px">Left Motor 2 wired in parallel with Motor 1</td></tr>
+          <tr><td>OUT3 / OUT4</td><td>→</td><td><span class="pin-tag pin-motor">Right Motor 1</span></td></tr>
+          <tr><td colspan="3" style="color:#546e7a;font-size:.7rem;padding:3px 12px">Right Motor 2 wired in parallel with Motor 3</td></tr>
+        </table>
+      </div>
+
+      <!-- Servo + Pump -->
+      <div class="conn-card">
+        <div class="conn-card-header" style="background:rgba(168,85,247,.07);border-bottom:1px solid var(--border)">
+          <div class="dot" style="background:#a855f7"></div>
+          <span style="color:#a855f7">SERVO + PUMP + RELAY</span>
+        </div>
+        <table class="conn-table">
+          <tr><th>Component</th><th>→</th><th>Connection</th></tr>
+          <tr><td>Servo Signal</td><td>→</td><td><span class="pin-tag pin-esp32">GPIO 15</span></td></tr>
+          <tr><td>Servo VCC/GND</td><td>→</td><td><span class="pin-tag pin-power">5V</span> / <span class="pin-tag pin-gnd">GND</span></td></tr>
+          <tr><td>Relay IN</td><td>→</td><td><span class="pin-tag pin-esp32">GPIO 13</span></td></tr>
+          <tr><td>Relay NO → Pump+</td><td>→</td><td><span class="pin-tag pin-signal">Pump (+)</span></td></tr>
+          <tr><td>Pump (–)</td><td>→</td><td><span class="pin-tag pin-gnd">GND</span></td></tr>
+        </table>
+      </div>
+
+      <!-- Power -->
+      <div class="conn-card">
+        <div class="conn-card-header" style="background:rgba(255,215,0,.07);border-bottom:1px solid var(--border)">
+          <div class="dot" style="background:#ffd700"></div>
+          <span style="color:#ffd700">POWER SUPPLY</span>
+        </div>
+        <table class="conn-table">
+          <tr><th>From</th><th>→</th><th>To</th></tr>
+          <tr><td>Battery 12V+</td><td>→</td><td><span class="pin-tag pin-power">L298N VCC + LM7805 IN</span></td></tr>
+          <tr><td>LM7805 OUT (5V)</td><td>→</td><td><span class="pin-tag pin-esp32">ESP32 VIN</span></td></tr>
+          <tr><td>5V rail</td><td>→</td><td><span class="pin-tag pin-signal">IR + HC-SR04 + Relay + Servo</span></td></tr>
+          <tr><td>Battery GND</td><td>→</td><td><span class="pin-tag pin-gnd">All GND (common)</span></td></tr>
+        </table>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ═══════════ HOW IT WORKS TAB ═══════════ -->
+  <div id="tab-howit" class="tab-content">
+    <div class="info-box">
+      <h3>🔊 HOW THE ULTRASONIC SENSOR UPGRADES YOUR CAR</h3>
+      The HC-SR04 sends ultrasonic pulses and measures how long the echo takes to return. This tells the ESP32 exactly how far away the nearest object is — whether it's a wall, an obstacle, or the fire itself.
+    </div>
+    <div class="feature-row">
+      <div class="feature-box">
+        <h4 style="color:#00e5ff">🛡️ FEATURE 1 — OBSTACLE AVOIDANCE</h4>
+        While patrolling (no fire detected), the car constantly checks distance.<br><br>
+        If an object is closer than <span style="color:#00e5ff">15 cm</span> and it's NOT a fire:<br>
+        → Back up → Turn right → Resume forward patrol.<br><br>
+        Without this, the car would crash into walls and get stuck.
+      </div>
+      <div class="feature-box">
+        <h4 style="color:#ff4500">🔥 FEATURE 2 — SMART FIRE APPROACH</h4>
+        When center IR detects fire, the car approaches slowly while monitoring distance.<br><br>
+        • <span style="color:#ffd700">&lt; 30 cm</span> → Start spraying water<br>
+        • <span style="color:#ff4500">&lt; 10 cm</span> → Emergency stop (too close!)<br><br>
+        Without this, the car would ram directly into the fire source.
+      </div>
+    </div>
+    <div class="feature-row">
+      <div class="feature-box">
+        <h4 style="color:#00ff88">📐 DISTANCE FORMULA</h4>
+        The ESP32 measures how long the ECHO pin stays HIGH (in microseconds).<br><br>
+        <span style="color:#00ff88">distance = (pulse_duration × 0.0343) ÷ 2</span><br><br>
+        0.0343 cm/µs = speed of sound at room temperature.<br>
+        Divide by 2 because the pulse travels TO the object and BACK.
+      </div>
+      <div class="feature-box">
+        <h4 style="color:#a855f7">⚡ VOLTAGE DIVIDER (IMPORTANT!)</h4>
+        ESP32 GPIO pins are 3.3V. The HC-SR04 ECHO pin outputs 5V.<br><br>
+        You MUST protect the ESP32 with a voltage divider:<br>
+        <span style="color:#a855f7">ECHO → 1kΩ → GPIO19 → 2kΩ → GND</span><br><br>
+        Or simply use the HC-SR04<b>P</b> variant which works at 3.3V natively.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ FLOWCHART TAB ═══════════ -->
+  <div id="tab-flowchart" class="tab-content">
+    <div class="flow-container" style="background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;overflow-x:auto">
+      <svg width="780" height="700" viewBox="0 0 780 700">
+        <defs>
+          <marker id="arr3" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#00bfff"/>
+          </marker>
+          <filter id="gc2"><feGaussianBlur stdDeviation="2"/></filter>
+        </defs>
+        <rect width="780" height="700" fill="#0a0e1a"/>
+
+        <!-- START -->
+        <ellipse cx="390" cy="38" rx="90" ry="24" fill="#1a2340" stroke="#00bfff" stroke-width="2"/>
+        <text x="390" y="44" text-anchor="middle" fill="#00bfff" font-size="12" font-family="Orbitron,monospace">POWER ON</text>
+        <line x1="390" y1="62" x2="390" y2="88" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+        <!-- INIT -->
+        <rect x="270" y="88" width="240" height="42" rx="6" fill="#1a1f35" stroke="#a855f7" stroke-width="1.5"/>
+        <text x="390" y="106" text-anchor="middle" fill="#a855f7" font-size="10" font-family="Share Tech Mono">INITIALIZE</text>
+        <text x="390" y="120" text-anchor="middle" fill="#546e7a" font-size="8" font-family="Share Tech Mono">Motors OFF | Pump OFF | Servo=90°</text>
+        <line x1="390" y1="130" x2="390" y2="156" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+        <!-- READ IR -->
+        <rect x="270" y="156" width="240" height="38" rx="6" fill="#1a1f35" stroke="#00ff88" stroke-width="1.5"/>
+        <text x="390" y="174" text-anchor="middle" fill="#00ff88" font-size="10" font-family="Share Tech Mono">READ IR SENSORS</text>
+        <text x="390" y="186" text-anchor="middle" fill="#546e7a" font-size="8" font-family="Share Tech Mono">Left | Center | Right</text>
+        <line x1="390" y1="194" x2="390" y2="218" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+        <!-- Decision: Fire? -->
+        <polygon points="390,218 500,252 390,286 280,252" fill="#1a1f35" stroke="#ffd700" stroke-width="1.5"/>
+        <text x="390" y="257" text-anchor="middle" fill="#ffd700" font-size="10" font-family="Share Tech Mono">Fire?</text>
+
+        <!-- NO → measure distance -->
+        <line x1="280" y1="252" x2="140" y2="252" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+        <text x="208" y="245" fill="#546e7a" font-size="9" font-family="Share Tech Mono">NO</text>
+
+        <!-- ULTRASONIC CHECK (NEW) -->
+        <rect x="20" y="230" width="120" height="44" rx="5" fill="#0a1520" stroke="#00e5ff" stroke-width="2"/>
+        <text x="80" y="248" text-anchor="middle" fill="#00e5ff" font-size="9" font-family="Share Tech Mono">MEASURE</text>
+        <text x="80" y="261" text-anchor="middle" fill="#00e5ff" font-size="9" font-family="Share Tech Mono">DISTANCE</text>
+        <line x1="80" y1="274" x2="80" y2="300" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+        <!-- Obstacle check -->
+        <polygon points="80,300 155,325 80,350 5,325" fill="#1a1f35" stroke="#ffd700" stroke-width="1.5"/>
+        <text x="80" y="329" text-anchor="middle" fill="#ffd700" font-size="8" font-family="Share Tech Mono">&lt;15cm?</text>
+
+        <!-- obstacle YES -->
+        <line x1="5" y1="325" x2="5" y2="395" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+        <text x="10" y="362" fill="#ff4500" font-size="8" font-family="Share Tech Mono">YES</text>
+        <rect x="-50" y="395" width="110" height="42" rx="5" fill="#1a1f35" stroke="#ff4500" stroke-width="1.5"/>
+        <text x="5" y="412" text-anchor="middle" fill="#ff4500" font-size="9" font-family="Share Tech Mono">AVOID</text>
+        <text x="5" y="426" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">Back+Turn Right</text>
+        <polyline points="5,437 5,610 390,610 390,630" fill="none" stroke="#00bfff" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr3)"/>
+
+        <!-- obstacle NO → forward -->
+        <line x1="155" y1="325" x2="230" y2="325" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+        <text x="188" y="318" fill="#00ff88" font-size="8" font-family="Share Tech Mono">NO</text>
+        <rect x="230" y="308" width="90" height="35" rx="5" fill="#1a1f35" stroke="#ff4500" stroke-width="1.5"/>
+        <text x="275" y="330" text-anchor="middle" fill="#ff4500" font-size="9" font-family="Share Tech Mono">FORWARD</text>
+        <polyline points="275,343 275,610 390,610" fill="none" stroke="#00bfff" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr3)"/>
+
+        <!-- YES fire → which sensor? -->
+        <line x1="390" y1="286" x2="390" y2="316" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+        <text x="400" y="303" fill="#00ff88" font-size="9" font-family="Share Tech Mono">YES</text>
+        <polygon points="390,316 490,348 390,380 290,348" fill="#1a1f35" stroke="#ffd700" stroke-width="1.5"/>
+        <text x="390" y="352" text-anchor="middle" fill="#ffd700" font-size="10" font-family="Share Tech Mono">Center?</text>
+
+        <!-- center YES → approach -->
+        <line x1="490" y1="348" x2="590" y2="348" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+        <text x="537" y="341" fill="#00ff88" font-size="8" font-family="Share Tech Mono">YES</text>
+
+        <!-- APPROACH (ultrasonic guided) NEW -->
+        <rect x="590" y="328" width="155" height="40" rx="5" fill="#0a1520" stroke="#00e5ff" stroke-width="2"/>
+        <text x="667" y="345" text-anchor="middle" fill="#00e5ff" font-size="8" font-family="Share Tech Mono">APPROACH FIRE</text>
+        <text x="667" y="358" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">ultrasonic guided</text>
+        <line x1="667" y1="368" x2="667" y2="400" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+
+        <!-- distance OK? -->
+        <polygon points="667,400 745,428 667,456 589,428" fill="#1a1f35" stroke="#ffd700" stroke-width="1.5"/>
+        <text x="667" y="432" text-anchor="middle" fill="#ffd700" font-size="8" font-family="Share Tech Mono">&lt;30cm?</text>
+
+        <!-- within range → fight fire -->
+        <line x1="667" y1="456" x2="667" y2="490" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+        <text x="677" y="474" fill="#00ff88" font-size="8" font-family="Share Tech Mono">YES</text>
+        <rect x="597" y="490" width="140" height="50" rx="5" fill="#1a1f35" stroke="#ff4500" stroke-width="2"/>
+        <text x="667" y="510" text-anchor="middle" fill="#ff4500" font-size="9" font-family="Orbitron,monospace">FIGHT FIRE</text>
+        <text x="667" y="523" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">STOP+PUMP+SWEEP</text>
+        <text x="667" y="534" text-anchor="middle" fill="#546e7a" font-size="7" font-family="Share Tech Mono">then back away</text>
+        <polyline points="667,540 667,610 390,610" fill="none" stroke="#00bfff" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr3)"/>
+
+        <!-- not close enough → keep moving -->
+        <line x1="745" y1="428" x2="770" y2="428" stroke="#00bfff" stroke-width="1.5"/>
+        <polyline points="770,428 770,348 745,348" fill="none" stroke="#ff6347" stroke-width="1.5" stroke-dasharray="4,2" marker-end="url(#arr3)"/>
+        <text x="758" y="388" fill="#546e7a" font-size="7" font-family="Share Tech Mono">keep</text>
+        <text x="758" y="398" fill="#546e7a" font-size="7" font-family="Share Tech Mono">going</text>
+
+        <!-- Left/Right turn -->
+        <line x1="390" y1="380" x2="390" y2="412" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+        <text x="400" y="398" fill="#546e7a" font-size="8" font-family="Share Tech Mono">NO</text>
+        <polygon points="390,412 470,440 390,468 310,440" fill="#1a1f35" stroke="#ffd700" stroke-width="1.5"/>
+        <text x="390" y="444" text-anchor="middle" fill="#ffd700" font-size="9" font-family="Share Tech Mono">Left/Right?</text>
+
+        <line x1="310" y1="440" x2="220" y2="440" stroke="#00bfff" stroke-width="1.5" marker-end="url(#arr3)"/>
+        <rect x="130" y="422" width="90" height="35" rx="5" fill="#1a1f35" stroke="#ff4500" stroke-width="1.5"/>
+        <text x="175" y="444" text-anchor="middle" fill="#ff4500" font-size="9" font-family="Share Tech Mono">TURN</text>
+        <polyline points="175,457 175,610 390,610" fill="none" stroke="#00bfff" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arr3)"/>
+
+        <!-- Loop label -->
+        <line x1="390" y1="610" x2="390" y2="645" stroke="#00bfff" stroke-width="1.5"/>
+        <text x="390" y="662" text-anchor="middle" fill="#546e7a" font-size="9" font-family="Share Tech Mono">← loop back → READ IR (100ms delay)</text>
+      </svg>
+    </div>
+  </div>
+
+  <!-- ═══════════ CODE TAB ═══════════ -->
+  <div id="tab-code" class="tab-content">
+    <div class="code-panel">
+      <div class="code-header">
+        <div class="code-dots">
+          <span style="background:#ff5f57"></span>
+          <span style="background:#febc2e"></span>
+          <span style="background:#28c840"></span>
+        </div>
+        <span style="color:#546e7a;font-size:.73rem">fire_fighting_car_ultrasonic.py — MicroPython ESP32</span>
+        <span style="color:#00e5ff;font-size:.68rem">+ HC-SR04 obstacle avoidance &amp; fire distance</span>
+      </div>
+      <div class="code-body"><pre><span class="kw">from</span> machine <span class="kw">import</span> Pin, PWM, time_pulse_us
+<span class="kw">import</span> time
+
+<span class="cm"># ── IR Sensors ──────────────────────────────</span>
+IR_LEFT   <span class="op">=</span> <span class="fn">Pin</span>(<span class="nm">34</span>, Pin.IN)
+IR_CENTER <span class="op">=</span> <span class="fn">Pin</span>(<span class="nm">35</span>, Pin.IN)
+IR_RIGHT  <span class="op">=</span> <span class="fn">Pin</span>(<span class="nm">32</span>, Pin.IN)
+
+<span class="cm highlight-new"># ── HC-SR04 Ultrasonic (NEW) ─────────────────</span>
+<span class="highlight-new">TRIG <span class="op">=</span> <span class="fn">Pin</span>(<span class="nm">18</span>, Pin.OUT)   <span class="cm"># Trigger</span>
+ECHO <span class="op">=</span> <span class="fn">Pin</span>(<span class="nm">19</span>, Pin.IN)    <span class="cm"># Echo (use voltage divider!)</span></span>
+
+<span class="cm"># ── L298N Motor Driver ───────────────────────</span>
+IN1 <span class="op">=</span> <span class="fn">Pin</span>(<span class="nm">26</span>, Pin.OUT);  IN2 <span class="op">=</span> <span class="fn">Pin</span>(<span class="nm">27</span>, Pin.OUT)
+IN3 <span class="op">=</span> <span class="fn">Pin</span>(<span class="nm">25</span>, Pin.OUT);  IN4 <span class="op">=</span> <span class="fn">Pin</span>(<span class="nm">33</span>, Pin.OUT)
+ENA <span class="op">=</span> <span class="fn">PWM</span>(<span class="fn">Pin</span>(<span class="nm">14</span>), freq=<span class="nm">1000</span>)
+ENB <span class="op">=</span> <span class="fn">PWM</span>(<span class="fn">Pin</span>(<span class="nm">12</span>), freq=<span class="nm">1000</span>)
+
+<span class="cm"># ── Pump + Servo ─────────────────────────────</span>
+PUMP_PIN  <span class="op">=</span> <span class="fn">Pin</span>(<span class="nm">13</span>, Pin.OUT)
+SERVO_PIN <span class="op">=</span> <span class="fn">PWM</span>(<span class="fn">Pin</span>(<span class="nm">15</span>), freq=<span class="nm">50</span>)
+
+<span class="cm"># ── Distance Thresholds (cm) ─────────────────</span>
+OBSTACLE_STOP_CM  <span class="op">=</span> <span class="nm">15</span>   <span class="cm"># Stop if wall is this close</span>
+FIRE_SPRAY_CM     <span class="op">=</span> <span class="nm">30</span>   <span class="cm"># Start spraying at this distance</span>
+FIRE_TOO_CLOSE_CM <span class="op">=</span> <span class="nm">10</span>   <span class="cm"># Emergency stop</span>
+
+<span class="cm"># ── Ultrasonic: get distance ─────────────────</span>
+<span class="kw">def</span> <span class="fn">get_distance_cm</span>():
+    TRIG.<span class="fn">value</span>(<span class="nm">0</span>); time.<span class="fn">sleep_us</span>(<span class="nm">2</span>)
+    TRIG.<span class="fn">value</span>(<span class="nm">1</span>); time.<span class="fn">sleep_us</span>(<span class="nm">10</span>)
+    TRIG.<span class="fn">value</span>(<span class="nm">0</span>)
+    <span class="kw">try</span>:
+        dur <span class="op">=</span> <span class="fn">time_pulse_us</span>(ECHO, <span class="nm">1</span>, <span class="nm">30000</span>)
+        <span class="kw">return</span> <span class="nm">999</span> <span class="kw">if</span> dur <span class="op">&lt;</span> <span class="nm">0</span> <span class="kw">else</span> (dur <span class="op">*</span> <span class="nm">0.0343</span>) <span class="op">/</span> <span class="nm">2.0</span>
+    <span class="kw">except</span>: <span class="kw">return</span> <span class="nm">999</span>
+
+<span class="cm"># ── Motor helpers ────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">move_forward</span>(s=<span class="nm">900</span>):
+    IN1.<span class="fn">value</span>(<span class="nm">1</span>);IN2.<span class="fn">value</span>(<span class="nm">0</span>);IN3.<span class="fn">value</span>(<span class="nm">1</span>);IN4.<span class="fn">value</span>(<span class="nm">0</span>)
+    ENA.<span class="fn">duty</span>(s);ENB.<span class="fn">duty</span>(s)
+<span class="kw">def</span> <span class="fn">turn_left</span>(s=<span class="nm">700</span>):
+    IN1.<span class="fn">value</span>(<span class="nm">0</span>);IN2.<span class="fn">value</span>(<span class="nm">1</span>);IN3.<span class="fn">value</span>(<span class="nm">1</span>);IN4.<span class="fn">value</span>(<span class="nm">0</span>)
+    ENA.<span class="fn">duty</span>(s);ENB.<span class="fn">duty</span>(s)
+<span class="kw">def</span> <span class="fn">turn_right</span>(s=<span class="nm">700</span>):
+    IN1.<span class="fn">value</span>(<span class="nm">1</span>);IN2.<span class="fn">value</span>(<span class="nm">0</span>);IN3.<span class="fn">value</span>(<span class="nm">0</span>);IN4.<span class="fn">value</span>(<span class="nm">1</span>)
+    ENA.<span class="fn">duty</span>(s);ENB.<span class="fn">duty</span>(s)
+<span class="kw">def</span> <span class="fn">move_backward</span>(s=<span class="nm">600</span>):
+    IN1.<span class="fn">value</span>(<span class="nm">0</span>);IN2.<span class="fn">value</span>(<span class="nm">1</span>);IN3.<span class="fn">value</span>(<span class="nm">0</span>);IN4.<span class="fn">value</span>(<span class="nm">1</span>)
+    ENA.<span class="fn">duty</span>(s);ENB.<span class="fn">duty</span>(s)
+<span class="kw">def</span> <span class="fn">stop_motors</span>():
+    ENA.<span class="fn">duty</span>(<span class="nm">0</span>);ENB.<span class="fn">duty</span>(<span class="nm">0</span>)
+
+<span class="cm"># ── Obstacle avoidance ───────────────────────</span>
+<span class="kw">def</span> <span class="fn">avoid_obstacle</span>():
+    <span class="fn">stop_motors</span>(); time.<span class="fn">sleep_ms</span>(<span class="nm">200</span>)
+    <span class="fn">move_backward</span>(); time.<span class="fn">sleep_ms</span>(<span class="nm">500</span>)
+    <span class="fn">turn_right</span>();    time.<span class="fn">sleep_ms</span>(<span class="nm">600</span>)
+    <span class="fn">stop_motors</span>()
+
+<span class="cm"># ── Approach fire (ultrasonic guided) ────────</span>
+<span class="kw">def</span> <span class="fn">approach_fire</span>():
+    <span class="kw">while True</span>:
+        dist <span class="op">=</span> <span class="fn">get_distance_cm</span>()
+        <span class="kw">if</span> dist <span class="op">&lt;=</span> FIRE_TOO_CLOSE_CM:
+            <span class="fn">stop_motors</span>(); <span class="kw">return True</span>   <span class="cm"># Too close!</span>
+        <span class="kw">if</span> dist <span class="op">&lt;=</span> FIRE_SPRAY_CM:
+            <span class="fn">stop_motors</span>(); <span class="kw">return True</span>   <span class="cm"># In range!</span>
+        <span class="kw">if</span> IR_CENTER.<span class="fn">value</span>() <span class="op">==</span> <span class="nm">1</span>:
+            <span class="fn">stop_motors</span>(); <span class="kw">return False</span>  <span class="cm"># Fire lost</span>
+        <span class="fn">move_forward</span>(<span class="nm">450</span>)               <span class="cm"># Approach slowly</span>
+        time.<span class="fn">sleep_ms</span>(<span class="nm">150</span>)
+
+<span class="cm"># ── Fight fire ───────────────────────────────</span>
+<span class="kw">def</span> <span class="fn">fight_fire</span>():
+    <span class="kw">if not</span> <span class="fn">approach_fire</span>(): <span class="kw">return</span>
+    PUMP_PIN.<span class="fn">value</span>(<span class="nm">1</span>)
+    <span class="kw">for</span> a <span class="kw">in</span> <span class="fn">range</span>(<span class="nm">60</span>,<span class="nm">121</span>,<span class="nm">5</span>): SERVO_PIN.<span class="fn">duty</span>(<span class="nm">26</span><span class="op">+</span><span class="fn">int</span>(a/<span class="nm">180</span><span class="op">*</span><span class="nm">102</span>)); time.<span class="fn">sleep_ms</span>(<span class="nm">60</span>)
+    <span class="kw">for</span> a <span class="kw">in</span> <span class="fn">range</span>(<span class="nm">120</span>,<span class="nm">59</span>,<span class="op">-</span><span class="nm">5</span>): SERVO_PIN.<span class="fn">duty</span>(<span class="nm">26</span><span class="op">+</span><span class="fn">int</span>(a/<span class="nm">180</span><span class="op">*</span><span class="nm">102</span>)); time.<span class="fn">sleep_ms</span>(<span class="nm">60</span>)
+    time.<span class="fn">sleep_ms</span>(<span class="nm">2000</span>)
+    PUMP_PIN.<span class="fn">value</span>(<span class="nm">0</span>)
+    <span class="fn">move_backward</span>(); time.<span class="fn">sleep_ms</span>(<span class="nm">600</span>)
+    <span class="fn">stop_motors</span>()
+
+<span class="cm"># ── MAIN LOOP ────────────────────────────────</span>
+<span class="fn">stop_motors</span>(); PUMP_PIN.<span class="fn">value</span>(<span class="nm">0</span>)
+<span class="kw">while True</span>:
+    L <span class="op">=</span> IR_LEFT.<span class="fn">value</span>()<span class="op">==</span><span class="nm">0</span>
+    C <span class="op">=</span> IR_CENTER.<span class="fn">value</span>()<span class="op">==</span><span class="nm">0</span>
+    R <span class="op">=</span> IR_RIGHT.<span class="fn">value</span>()<span class="op">==</span><span class="nm">0</span>
+
+    <span class="kw">if</span> C:
+        <span class="fn">fight_fire</span>()              <span class="cm"># Fire ahead → approach + spray</span>
+    <span class="kw">elif</span> L <span class="kw">and not</span> R:
+        <span class="fn">turn_left</span>(); time.<span class="fn">sleep_ms</span>(<span class="nm">200</span>)
+    <span class="kw">elif</span> R <span class="kw">and not</span> L:
+        <span class="fn">turn_right</span>(); time.<span class="fn">sleep_ms</span>(<span class="nm">200</span>)
+    <span class="kw">else</span>:
+        dist <span class="op">=</span> <span class="fn">get_distance_cm</span>()  <span class="cm"># Obstacle check while patrolling</span>
+        <span class="kw">if</span> dist <span class="op">&lt;</span> OBSTACLE_STOP_CM:
+            <span class="fn">avoid_obstacle</span>()
+        <span class="kw">else</span>:
+            <span class="fn">move_forward</span>()
+
+    time.<span class="fn">sleep_ms</span>(<span class="nm">100</span>)</pre></div>
+    </div>
+  </div>
+
+</div>
+<script>
+function showTab(name, btn) {
+  document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  btn.classList.add('active');
+}
+</script>
+</body>
+</html>
